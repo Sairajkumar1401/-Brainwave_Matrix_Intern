@@ -1,0 +1,376 @@
+-- Library Table
+CREATE TABLE Library (
+    LibraryID INT PRIMARY KEY,
+    LibraryName VARCHAR(100),
+    LibraryAddress VARCHAR(200)
+);
+
+-- Admin Table
+CREATE TABLE Admin (
+    AdminID INT PRIMARY KEY,
+    AdminName VARCHAR(100),
+    AdminEmail VARCHAR(100),
+    AdminContact VARCHAR(15)
+);
+
+-- Librarian Table
+CREATE TABLE Librarian (
+    LibrarianID INT PRIMARY KEY,
+    LibrarianName VARCHAR(100),
+    Designation VARCHAR(50),
+    AdminID INT,
+    LibraryID INT,
+    FOREIGN KEY (AdminID) REFERENCES Admin(AdminID),
+    FOREIGN KEY (LibraryID) REFERENCES Library(LibraryID)
+);
+
+-- Publisher Table
+CREATE TABLE Publisher (
+    PublisherID INT PRIMARY KEY,
+    PublisherName VARCHAR(100),
+    PublisherCountry VARCHAR(50)
+);
+
+-- Author Table
+CREATE TABLE Author (
+    AuthorCode INT PRIMARY KEY,
+    AuthorName VARCHAR(100),
+    AuthorQualification VARCHAR(50)
+);
+
+-- Books Table
+CREATE TABLE Books (
+    BookID INT PRIMARY KEY,
+    BookName VARCHAR(100),
+    BookCategory VARCHAR(50),
+    BookStatus VARCHAR(20),
+    LibraryID INT,
+    PublisherID INT,
+    AuthorCode INT,
+    FOREIGN KEY (LibraryID) REFERENCES Library(LibraryID),
+    FOREIGN KEY (PublisherID) REFERENCES Publisher(PublisherID),
+    FOREIGN KEY (AuthorCode) REFERENCES Author(AuthorCode)
+);
+
+-- User Table
+CREATE TABLE UserTable (
+    UserID INT PRIMARY KEY,
+    UserName VARCHAR(100),
+    State VARCHAR(50),
+    City VARCHAR(50),
+    ContactNo VARCHAR(15)
+);
+
+-- UserPayment Table (with added FineAmount and FinePaidStatus attributes)
+CREATE TABLE UserPaymentTable (
+    PaymentID INT PRIMARY KEY,
+    UserID INT,
+    BookID INT,
+    IssueDate DATE,
+    DueDate DATE,
+    ReturnDate DATE,
+    Payment DECIMAL(10, 2),
+    FineAmount DECIMAL(10, 2) DEFAULT 0.00,  -- Added FineAmount column
+    FinePaidStatus VARCHAR(10) DEFAULT 'Unpaid',  -- Added FinePaidStatus column
+    FOREIGN KEY (UserID) REFERENCES UserTable(UserID),
+    FOREIGN KEY (BookID) REFERENCES Books(BookID)
+);
+
+-- Insert sample data into Admin, Library, Publisher, Librarian, Author, Books, UserTable, UserPaymentTable
+INSERT INTO Admin VALUES (1, 'Sairajkumar', 'sai@gmail.com', '1234567890');
+INSERT INTO Admin VALUES (2, 'Ravikumar', 'ravi@gmail.com', '9876543210');
+INSERT INTO Admin VALUES (3, 'Kirankumar', 'kiran@gmail.com', '9876543210');
+INSERT INTO Admin VALUES (4, 'Rameshkumar', 'ramesh@gmail.com', '9876543210');
+
+INSERT INTO Library VALUES (1, 'Central Library', '123 Main St');
+INSERT INTO Library VALUES (2, 'Community Library', '456 Elm St');
+INSERT INTO Library VALUES (3, 'Rgm Library', '456 Nandyal St');
+INSERT INTO Library VALUES (4, 'Shanthiram Library', '456 Kurnool St');
+
+INSERT INTO Publisher VALUES (201, 'Penguin Random House', 'USA');
+INSERT INTO Publisher VALUES (202, 'HarperCollins', 'UK');
+INSERT INTO Publisher VALUES (203, 'Macmillan', 'Germany');
+INSERT INTO Publisher VALUES (204, 'Rajamouli SS', 'India');
+
+INSERT INTO Librarian VALUES (1, 'Indira', 'Head Librarian', 1, 1);
+INSERT INTO Librarian VALUES (2, 'Vijay Kumar', 'Assistant Librarian', 1, 2);
+INSERT INTO Librarian VALUES (3, 'Kishore', 'Assistant Librarian', 2, 3);
+INSERT INTO Librarian VALUES (4, 'Pavan', 'Assistant Librarian', 2, 3);
+
+INSERT INTO Author VALUES (1, 'Mark Twain', 'PhD in Literature');
+INSERT INTO Author VALUES (2, 'Jane Austen', 'Masters in English');
+INSERT INTO Author VALUES (3, 'Vijayendraprasad', 'Masters in English');
+
+INSERT INTO Books VALUES (101, 'Adventures of Huckleberry Finn', 'Fiction', 'Available', 1, 201, 1);
+INSERT INTO Books VALUES (102, 'Pride and Prejudice', 'Romance', 'Issued', 2, 202, 2);
+INSERT INTO Books VALUES (103, 'Bahubali', 'Historic', 'Issued', 2, 204, 3);
+
+INSERT INTO UserTable VALUES (1, 'Emma Watson', 'Tamilnadu', 'Chennai', '5551234567');
+INSERT INTO UserTable VALUES (2, 'Chris Evans', 'Tamilnadu', 'Pondicherry', '5557654321');
+INSERT INTO UserTable VALUES (3, 'Thomas Holand', 'AP', 'Vijayawada', '555789065');
+INSERT INTO UserTable VALUES (4, 'John snow', 'AP', 'Vizag', '5557654324');
+
+select * from admin;
+select * from library
+select * from publisher
+select * from Librarian
+select * from Author
+select * from Books
+select * from Usertable
+
+-- Sequence for Admin
+CREATE SEQUENCE AdminSeq START WITH 5 INCREMENT BY 1;
+
+-- Sequence for Librarian
+CREATE SEQUENCE LibrarianSeq START WITH 5 INCREMENT BY 1;
+
+-- Sequence for Books
+CREATE SEQUENCE BookSeq START WITH 104 INCREMENT BY 1;
+
+-- Sequence for UserTable
+CREATE SEQUENCE UserSeq START WITH 5 INCREMENT BY 1;
+
+-- Sequence for UserPaymentTable
+CREATE SEQUENCE PaymentSeq START WITH 1001 INCREMENT BY 1;
+
+-- Sequence for Publisher
+CREATE SEQUENCE PublisherSeq START WITH 205 INCREMENT BY 1;
+
+-- Package creation for Library operations
+CREATE OR REPLACE PACKAGE LibraryPackage IS
+    PROCEDURE AddBook(BookID IN INT, BookName IN VARCHAR2, BookCategory IN VARCHAR2, 
+                      BookStatus IN VARCHAR2, LibraryID IN INT, 
+                      PublisherID IN INT, AuthorCode IN INT);
+    
+    PROCEDURE UpdateBookStatus(BookID IN INT, NewStatus IN VARCHAR2);
+    
+    PROCEDURE AddUserPayment(UserID IN INT, BookID IN INT, IssueDate IN DATE, DueDate IN DATE);
+    
+    FUNCTION CalculateFine(UserID IN INT, BookID IN INT) RETURN NUMBER;
+    
+    FUNCTION ReturnBook(UserID IN INT, BookID IN INT, ReturnDate IN DATE) RETURN NUMBER;
+END LibraryPackage;
+/
+CREATE OR REPLACE PACKAGE BODY LibraryPackage IS
+    PROCEDURE AddBook(BookID IN INT, BookName IN VARCHAR2, BookCategory IN VARCHAR2, 
+                      BookStatus IN VARCHAR2, LibraryID IN INT, 
+                      PublisherID IN INT, AuthorCode IN INT) IS
+    BEGIN
+        INSERT INTO Books (BookID, BookName, BookCategory, BookStatus, LibraryID, PublisherID, AuthorCode)
+        VALUES (BookID, BookName, BookCategory, BookStatus, LibraryID, PublisherID, AuthorCode);
+    END AddBook;
+
+    PROCEDURE UpdateBookStatus(BookID IN INT, NewStatus IN VARCHAR2) IS
+    BEGIN
+        UPDATE Books
+        SET BookStatus = NewStatus
+        WHERE BookID = BookID;
+    END UpdateBookStatus;
+
+    PROCEDURE AddUserPayment(UserID IN INT, BookID IN INT, IssueDate IN DATE, DueDate IN DATE) IS
+    BEGIN
+        INSERT INTO UserPaymentTable (PaymentID, UserID, BookID, IssueDate, DueDate, Payment, FineAmount, FinePaidStatus)
+        VALUES (PaymentSeq.NEXTVAL, UserID, BookID, IssueDate, DueDate, 0.00, 0.00, 'Unpaid');
+    END AddUserPayment;
+
+    FUNCTION CalculateFine(UserID INT, BookID INT) RETURN NUMBER IS
+    fine NUMBER := 0;
+    dueDate DATE;
+    fineRate NUMBER := 10; -- Fine per day is now 10 rupees
+    daysLate NUMBER;
+	BEGIN
+    -- Fetch the first due date for the given UserID and BookID where ReturnDate is NULL
+    	SELECT DueDate
+    	INTO dueDate
+    	FROM (SELECT DueDate 
+          	FROM UserPaymentTable
+          	WHERE UserID = UserID 
+          	AND BookID = BookID 	
+          	AND ReturnDate IS NULL
+          	ORDER BY PaymentID DESC)
+    	WHERE ROWNUM = 1;
+
+    -- Calculate fine if the provided return date exceeds the due date
+    	IF SYSDATE > dueDate THEN
+        	daysLate := TRUNC(SYSDATE) - TRUNC(dueDate);
+        	fine := daysLate * fineRate;
+    	END IF;
+
+    	RETURN fine;
+
+	EXCEPTION
+    	WHEN NO_DATA_FOUND THEN
+        	RETURN 0; -- No fine if no record found
+	END CalculateFine;
+
+    FUNCTION ReturnBook(UserID IN INT, BookID IN INT, ReturnDate IN DATE) RETURN NUMBER IS
+        FineAmount NUMBER := 0;
+    BEGIN
+        -- Calculate the fine
+        FineAmount := CalculateFine(UserID, BookID);
+
+        -- Update ReturnDate, Payment, and PaymentStatus
+        UPDATE UserPaymentTable
+        SET ReturnDate = ReturnDate,
+            Payment = FineAmount,
+            finepaidstatus = CASE
+                               WHEN FineAmount = 0 THEN 'Paid'
+                               ELSE 'Unpaid'
+                           END
+        WHERE UserID = UserID
+          AND BookID = BookID
+          AND ReturnDate IS NULL;
+
+        -- If fine > 0, mark it as paid
+        IF FineAmount > 0 THEN
+            UPDATE UserPaymentTable
+            SET finepaidStatus = 'Paid'
+            WHERE UserID = UserID
+              AND BookID = BookID;
+        END IF;
+
+        RETURN FineAmount;
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+            RETURN 0;
+    END ReturnBook;
+END LibraryPackage;
+/
+
+
+-- Trigger to update Book Status when a book is issued
+CREATE OR REPLACE TRIGGER BookIssueTrigger
+AFTER INSERT ON UserPaymentTable
+FOR EACH ROW
+BEGIN
+    UPDATE Books
+    SET BookStatus = 'Issued'
+    WHERE BookID = :NEW.BookID;
+END;
+/
+
+-- Trigger to update Book Status when a book is returned
+CREATE OR REPLACE TRIGGER BookReturnTrigger
+AFTER UPDATE ON UserPaymentTable
+FOR EACH ROW
+BEGIN
+    IF :NEW.ReturnDate IS NOT NULL THEN
+        UPDATE Books
+        SET BookStatus = 'Available'
+        WHERE BookID = :NEW.BookID;
+    END IF;
+END;
+/
+-- View to show user payment history and fine status
+CREATE OR REPLACE VIEW UserBookHistory AS
+SELECT u.UserID, u.UserName, b.BookID, b.BookName, up.IssueDate, up.DueDate, up.ReturnDate, 
+       NVL(up.FineAmount, 0) AS FineAmount, up.FinePaidStatus
+FROM UserTable u
+JOIN UserPaymentTable up ON u.UserID = up.UserID
+JOIN Books b ON up.BookID = b.BookID;
+/
+-- --------------------------------------------------------------------------Test example
+
+-- Add a new book
+BEGIN
+    LibraryPackage.AddBook(
+        BookID => BookSeq.NEXTVAL, 
+        BookName => 'The Catcher in the Rye', 
+        BookCategory => 'Fiction', 
+        BookStatus => 'Available', 
+        LibraryID => 1, 
+        PublisherID => 201, 
+        AuthorCode => 1
+    );
+END;
+/
+select * from books
+-- Update book status to 'Available'
+BEGIN
+    LibraryPackage.UpdateBookStatus(
+        BookID => 101, 
+        NewStatus => 'Available'
+    );
+END;
+/
+-- Add a new user payment record
+BEGIN
+    LibraryPackage.AddUserPayment(
+        UserID => 2, 
+        BookID => 101, 
+        IssueDate => TO_DATE('2024-11-01', 'YYYY-MM-DD'), 
+        DueDate => TO_DATE('2024-11-15', 'YYYY-MM-DD')
+    );
+END;
+/
+select * from userpaymenttable
+-- Calculate the fine for a user and book
+DECLARE
+    FineAmount NUMBER;
+BEGIN
+    FineAmount := LibraryPackage.CalculateFine(
+        UserID => 2, 
+        BookID => 101
+    );
+    DBMS_OUTPUT.PUT_LINE('Fine Amount: ' || FineAmount);
+END;
+/
+-- Return a book and calculate fine
+DECLARE
+    FineAmount NUMBER;
+BEGIN
+    FineAmount := LibraryPackage.ReturnBook(
+        UserID => 2, 
+        BookID => 101, 
+        ReturnDate => TO_DATE('2024-12-05', 'YYYY-MM-DD')
+    );
+    DBMS_OUTPUT.PUT_LINE('Fine Amount on Return: ' || FineAmount);
+END;
+/
+select * from userpaymenttable where userid=2
+-- Query the UserPaymentTable to see if the return date and payment were updated
+SELECT * FROM UserPaymentTable WHERE BookID = 101 AND UserID = 2;
+
+-- Query the Books table to verify the book status change
+SELECT * FROM Books WHERE BookID = 101;
+
+-- Query the Books table to verify the book is added
+SELECT * FROM Books WHERE BookName = 'The Catcher in the Rye';
+
+
+
+-- Query to display user book history with fine and payment status
+SELECT * FROM UserBookHistory;
+
+-- Insert a new payment record to trigger the BookIssueTrigger
+BEGIN
+    INSERT INTO UserPaymentTable (PaymentID, UserID, BookID, IssueDate, DueDate, Payment)
+    VALUES (PaymentSeq.NEXTVAL, 4, 103, SYSDATE, SYSDATE + 10, 0);
+END;
+/
+-- Query the Books table to see if the BookStatus has been updated to 'Issued' by the trigger
+SELECT * FROM Books WHERE BookID = 103;
+
+-- Execute a block to update the ReturnDate for a book
+DECLARE
+    FineAmount NUMBER;
+BEGIN
+    -- returning a book by updating the ReturnDate in UserPaymentTable----------------
+    UPDATE UserPaymentTable
+    SET ReturnDate = TO_DATE('2024-12-05', 'YYYY-MM-DD')
+    WHERE UserID = 2 AND BookID = 101 AND ReturnDate IS NULL;
+
+    -- Optionally, if you're also calculating the fine, do that too-------------------
+    FineAmount := LibraryPackage.ReturnBook(2, 101, TO_DATE('2024-12-05', 'YYYY-MM-DD'));
+
+    -- Output fine information (if needed)
+    DBMS_OUTPUT.PUT_LINE('Fine Amount: ' || FineAmount);
+END;
+/
+-- Query to verify if the trigger updated the BookStatus to 'Available'
+SELECT * FROM Books WHERE BookID = 101;
+select * from userpaymenttable
+-- Query to display user book history with fine and payment status
+SELECT * FROM UserBookHistory;
+
