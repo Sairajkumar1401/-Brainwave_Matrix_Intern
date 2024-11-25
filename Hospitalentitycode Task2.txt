@@ -1,0 +1,209 @@
+-- Patient Table
+CREATE TABLE Patient (
+    PatientID NUMBER PRIMARY KEY,
+    PatientName VARCHAR2(100),
+    Gender VARCHAR2(10),
+    DOB DATE,
+    Contact VARCHAR2(15),
+    Address VARCHAR2(255)
+);
+-- Departments Table
+CREATE TABLE Departments (
+    DepartmentID NUMBER PRIMARY KEY,
+    DepartmentName VARCHAR2(100)
+);
+
+-- Doctor Table
+CREATE TABLE Doctor (
+    DoctorID NUMBER PRIMARY KEY,
+    DoctorName VARCHAR2(100),
+    Specialization VARCHAR2(50),
+    DepartmentID NUMBER,
+    ContactNo VARCHAR2(15),
+    CONSTRAINT fk_DepartmentID FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
+
+-- Rooms Table
+CREATE TABLE Rooms (
+    RoomID NUMBER PRIMARY KEY,
+    RoomType VARCHAR2(50),
+    RoomStatus VARCHAR2(50),
+    PatientID NUMBER,
+    CONSTRAINT fk_PatientID FOREIGN KEY (PatientID) REFERENCES Patient(PatientID)
+);
+
+-- Appointments Table
+CREATE TABLE Appointments (
+    AppointmentID NUMBER PRIMARY KEY,
+    PatientID NUMBER,
+    DoctorID NUMBER,
+    AppointmentDate DATE,
+    TimeSlot VARCHAR2(50),
+    Status VARCHAR2(50),
+    CONSTRAINT fk_PatientID_App FOREIGN KEY (PatientID) REFERENCES Patient(PatientID),
+    CONSTRAINT fk_DoctorID_App FOREIGN KEY (DoctorID) REFERENCES Doctor(DoctorID)
+);
+
+-- Billing Table
+CREATE TABLE Billing (
+    BillID NUMBER PRIMARY KEY,
+    PatientID NUMBER,
+    AppointmentID NUMBER,
+    TotalAmount NUMBER(10, 2),
+    BillDate DATE,
+    CONSTRAINT fk_PatientID_Bill FOREIGN KEY (PatientID) REFERENCES Patient(PatientID),
+    CONSTRAINT fk_AppointmentID FOREIGN KEY (AppointmentID) REFERENCES Appointments(AppointmentID)
+);
+
+-- Lab Report Table
+CREATE TABLE LabReport (
+    ReportID NUMBER PRIMARY KEY,
+    PatientID NUMBER,
+    DoctorID NUMBER,
+    TestName VARCHAR2(100),
+    TestDate DATE,
+    TestResult VARCHAR2(255),
+    LabTechnician VARCHAR2(100),
+    CONSTRAINT fk_PatientID_Lab FOREIGN KEY (PatientID) REFERENCES Patient(PatientID),
+    CONSTRAINT fk_DoctorID_Lab FOREIGN KEY (DoctorID) REFERENCES Doctor(DoctorID)
+);
+
+-- Staff Table
+CREATE TABLE Staff (
+    StaffID NUMBER PRIMARY KEY,
+    StaffName VARCHAR2(100),
+    Role VARCHAR2(50),
+    DepartmentID NUMBER,
+    Contact VARCHAR2(15),
+    Salary NUMBER(10, 2),
+    DOJ DATE,
+    CONSTRAINT fk_DepartmentID_Staff FOREIGN KEY (DepartmentID) REFERENCES Departments(DepartmentID)
+);
+-- Insert Data into Patient Table
+INSERT INTO Patient VALUES (1, 'John Doe', 'Male', TO_DATE('1985-06-15', 'YYYY-MM-DD'), '1234567890', '123 Main St');
+INSERT INTO Patient VALUES (2, 'Jane Smith', 'Female', TO_DATE('1990-08-22', 'YYYY-MM-DD'), '0987654321', '456 Elm St');
+INSERT INTO Patient VALUES (3, 'Alice Johnson', 'Female', TO_DATE('2000-11-01', 'YYYY-MM-DD'), '5678901234', '789 Pine St');
+
+-- Insert Data into Departments Table
+INSERT INTO Departments VALUES (1, 'Cardiology');
+INSERT INTO Departments VALUES (2, 'Neurology');
+INSERT INTO Departments VALUES (3, 'Orthopedics');
+
+-- Insert Data into Doctor Table
+INSERT INTO Doctor VALUES (1, 'Dr. Brown', 'Cardiologist', 1, '9876543210');
+INSERT INTO Doctor VALUES (2, 'Dr. Green', 'Neurologist', 2, '8765432109');
+INSERT INTO Doctor VALUES (3, 'Dr. White', 'Orthopedic', 3, '7654321098');
+
+-- Insert Data into Rooms Table
+INSERT INTO Rooms VALUES (101, 'Single', 'Occupied', 1);
+INSERT INTO Rooms VALUES (102, 'Double', 'Available', NULL);
+INSERT INTO Rooms VALUES (103, 'ICU', 'Occupied', 2);
+
+-- Insert Data into Appointments Table
+INSERT INTO Appointments VALUES (1, 1, 1, TO_DATE('2024-12-01', 'YYYY-MM-DD'), '10:00 AM', 'Confirmed');
+INSERT INTO Appointments VALUES (2, 2, 2, TO_DATE('2024-12-02', 'YYYY-MM-DD'), '11:30 AM', 'Pending');
+INSERT INTO Appointments VALUES (3, 3, 3, TO_DATE('2024-12-03', 'YYYY-MM-DD'), '09:00 AM', 'Cancelled');
+
+-- Insert Data into Billing Table
+INSERT INTO Billing VALUES (1, 1, 1, 1500.00, TO_DATE('2024-12-01', 'YYYY-MM-DD'));
+INSERT INTO Billing VALUES (2, 2, 2, 2500.00, TO_DATE('2024-12-02', 'YYYY-MM-DD'));
+INSERT INTO Billing VALUES (3, 3, 3, 1000.00, TO_DATE('2024-12-03', 'YYYY-MM-DD'));
+
+-- Insert Data into LabReport Table
+INSERT INTO LabReport VALUES (1, 1, 1, 'Blood Test', TO_DATE('2024-11-28', 'YYYY-MM-DD'), 'Normal', 'Technician A');
+INSERT INTO LabReport VALUES (2, 2, 2, 'MRI', TO_DATE('2024-11-29', 'YYYY-MM-DD'), 'Abnormal', 'Technician B');
+INSERT INTO LabReport VALUES (3, 3, 3, 'X-Ray', TO_DATE('2024-11-30', 'YYYY-MM-DD'), 'Normal', 'Technician C');
+
+-- Insert Data into Staff Table
+INSERT INTO Staff VALUES (1, 'Emily Davis', 'Nurse', 1, '6543210987', 30000.00, TO_DATE('2023-01-15', 'YYYY-MM-DD'));
+INSERT INTO Staff VALUES (2, 'Michael Brown', 'Technician', 2, '5432109876', 25000.00, TO_DATE('2023-03-10', 'YYYY-MM-DD'));
+INSERT INTO Staff VALUES (3, 'Sarah Wilson', 'Receptionist', 3, '4321098765', 20000.00, TO_DATE('2023-05-05', 'YYYY-MM-DD'));
+-- Retrieving All Appointments for a Specific Doctor
+SELECT 
+    a.AppointmentID, p.PatientName, a.AppointmentDate, a.TimeSlot, a.Status 
+FROM 
+    Appointments a
+JOIN 
+    Patient p ON a.PatientID = p.PatientID
+WHERE 
+    a.DoctorID = 1;
+---------Total Revenue-----
+SELECT 
+    SUM(TotalAmount) AS TotalRevenue 
+FROM 
+    Billing;
+-------------Doctors without Appointments---------
+SELECT 
+    d.DoctorName 
+FROM 
+    Doctor d
+LEFT JOIN 
+    Appointments a ON d.DoctorID = a.DoctorID
+WHERE 
+    a.DoctorID IS NULL;
+--------creating a view for active patients---------
+CREATE VIEW ActivePatients AS
+SELECT 
+    r.RoomID, r.RoomType, r.RoomStatus, p.PatientName 
+FROM 
+    Rooms r
+JOIN 
+    Patient p ON r.PatientID = p.PatientID
+WHERE 
+    r.RoomStatus = 'Occupied';
+----------Window function Rank --------Ranking Patients by total bills paid----------
+SELECT 
+    p.PatientID,
+    p.PatientName,
+    SUM(b.TotalAmount) AS TotalBill,
+    RANK() OVER (ORDER BY SUM(b.TotalAmount) DESC) AS RankBySpending
+FROM 
+    Patient p
+JOIN 
+    Billing b ON p.PatientID = b.PatientID
+GROUP BY 
+    p.PatientID, p.PatientName;
+----------------Calculate Running Total of Revenue by Date--------------
+SELECT 
+    BillDate,
+    SUM(TotalAmount) AS DailyRevenue,
+    SUM(SUM(TotalAmount)) OVER (ORDER BY BillDate) AS RunningTotalRevenue
+FROM 
+    Billing
+GROUP BY 
+    BillDate;
+------------------------------Find Departments with the Most Doctors--------------------
+WITH DoctorCounts AS (
+    SELECT 
+        d.DepartmentID,
+        dp.DepartmentName,
+        COUNT(d.DoctorID) AS DoctorCount
+    FROM 
+        Doctor d
+    JOIN 
+        Departments dp ON d.DepartmentID = dp.DepartmentID
+    GROUP BY 
+        d.DepartmentID, dp.DepartmentName)
+SELECT 
+    DepartmentName,
+    DoctorCount
+FROM 
+    DoctorCounts
+WHERE 
+    DoctorCount = (SELECT MAX(DoctorCount) FROM DoctorCounts);
+--------------------------------Average Bill by Department Using Partition------------
+SELECT 
+    dp.DepartmentName,
+    p.PatientName,
+    b.TotalAmount,
+    AVG(b.TotalAmount) OVER (PARTITION BY dp.DepartmentName) AS AvgBillByDepartment
+FROM 
+    Billing b
+JOIN 
+    Appointments a ON b.AppointmentID = a.AppointmentID
+JOIN 
+    Doctor d ON a.DoctorID = d.DoctorID
+JOIN 
+    Departments dp ON d.DepartmentID = dp.DepartmentID
+JOIN 
+    Patient p ON b.PatientID = p.PatientID;
